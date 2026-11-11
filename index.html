@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CleanPaste — 一键清理粘贴文本</title>
+<style>
+body{font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:32px auto;padding:0 16px;line-height:1.6;color:#222}
+h1{font-size:22px;margin-bottom:4px}
+p{color:#555}
+textarea{width:100%;min-height:180px;padding:12px;font-size:15px;line-height:1.6;border:1px solid #ccc;border-radius:8px;box-sizing:border-box}
+button{padding:10px 16px;margin:8px 8px 0 0;font-size:15px;border:1px solid #222;border-radius:8px;background:#222;color:#fff;cursor:pointer}
+button.secondary{background:#fff;color:#222}
+label{display:inline-block;margin:8px 16px 0 0;font-size:14px}
+#stats{margin-top:12px;font-size:14px;color:#555;white-space:pre-wrap}
+small{color:#888}
+</style>
+</head>
+<body>
+<h1>CleanPaste — 一键清理粘贴文本</h1>
+<p>粘贴从网页、微信、PDF 复制来的乱文本，一键变干净。纯本地运行，不联网、不上传。</p>
+<label><input type="checkbox" id="optBlank" checked> 合并多余空行</label>
+<label><input type="checkbox" id="optTrim" checked> 去掉每行首尾空格</label>
+<label><input type="checkbox" id="optSpaces"> 中文间多余空格去掉</label>
+<textarea id="in" placeholder="把乱文本粘贴到这里……"></textarea>
+<div>
+<button id="clean">清理文本</button>
+<button id="copy" class="secondary">复制结果</button>
+<button id="download" class="secondary">下载 .txt</button>
+</div>
+<textarea id="out" placeholder="清理后的文本会出现在这里……" readonly></textarea>
+<div id="stats"></div>
+<p><small>CleanPaste v0.1 · 单文件 HTML，离线可用。买家拿到文件后双击即可用，无需安装。</small></p>
+<script>
+function cleanText(t){
+  var lines=t.replace(/\r\n/g,"\n").split("\n");
+  if(document.getElementById("optTrim").checked){lines=lines.map(function(s){return s.trim();});}
+  if(document.getElementById("optBlank").checked){
+    var out=[],prevBlank=false;
+    lines.forEach(function(s){var b=s==="";if(b&&prevBlank)return;out.push(s);prevBlank=b;});
+    lines=out;
+    while(lines.length&&lines[0]==="")lines.shift();
+    while(lines.length&&lines[lines.length-1]==="")lines.pop();
+  }
+  var r=lines.join("\n");
+  if(document.getElementById("optSpaces").checked){r=r.replace(/([\u4e00-\u9fa5])\s+([\u4e00-\u9fa5])/g,"$1$2");}
+  return r;
+}
+function countText(t){
+  var cn=(t.match(/[\u4e00-\u9fa5]/g)||[]).length;
+  var en=(t.match(/[A-Za-z]+/g)||[]).length;
+  return "中文字符："+cn+"  ·  英文单词："+en+"  ·  总字符："+t.length;
+}
+document.getElementById("clean").addEventListener("click",function(){
+  var v=document.getElementById("in").value;
+  var c=cleanText(v);
+  document.getElementById("out").value=c;
+  document.getElementById("stats").textContent="清理前 "+countText(v)+"\n清理后 "+countText(c);
+});
+document.getElementById("copy").addEventListener("click",function(){
+  var o=document.getElementById("out");o.select();document.execCommand("copy");
+});
+document.getElementById("download").addEventListener("click",function(){
+  var blob=new Blob([document.getElementById("out").value],{type:"text/plain;charset=utf-8"});
+  var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="cleaned.txt";a.click();
+});
+</script>
+</body>
+</html>
